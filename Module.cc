@@ -13,8 +13,11 @@ void Module::bookHistograms(std::string dir,
       b.cd(dir);
       mes_.push_back(b.book1d(std::string("pippo")));
       mes_.push_back(b.book1d(std::string("pluto")));
-      if ((streamId%2) == 0)
+      if ((streamId%2) == 0) {
         mes_.push_back(b.book1d(std::string("paperino")));
+	MonitorElement & me = *mes_.back();
+	me.setLumiFlag();
+      }
     }, run, streamId, moduleId);
 };
 

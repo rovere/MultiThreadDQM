@@ -8,6 +8,8 @@
 void dumpMe(const MonitorElement & me,
             bool printStat = false) {
   std::cout << "Run: " << me.run()
+	    << " Lumi: " << me.lumi()
+            << " LumiFlag: " << me.getLumiFlag()
             << " streamId: " << me.streamId()
             << " moduleId: " << me.moduleId()
             << " fullpathname: " << me.dir()
@@ -64,11 +66,12 @@ MonitorElement * DQMStore::book1d(std::string name) {
     object for the first time, no Add action is needed since the ROOT
     histograms is cloned starting from the local one. */
 
-void DQMStore::mergeAndResetMEs(uint32_t run,
-                                uint32_t streamId,
-                                uint32_t moduleId) {
+void DQMStore::mergeAndResetMEsRunSummaryCache(uint32_t run,
+					       uint32_t streamId,
+					       uint32_t moduleId) {
   std::cout << "Merging objects from run: "
-            << run << ", stream: " << streamId
+            << run
+	    << ", stream: " << streamId
             << " module: " << moduleId << std::endl;
   std::string null_str("");
   MonitorElement proto(&null_str, &null_str, run, streamId, moduleId);
@@ -80,6 +83,15 @@ void DQMStore::mergeAndResetMEs(uint32_t run,
         || i->moduleId() != moduleId)
       break;
     MonitorElement global_me(*i);
+
+    // Handle LS-based histograms in the LuminositySummaryCache() and
+    // ignore them here.
+
+    if (global_me.getLumiFlag()) {
+      ++i;
+      continue;
+    }
+
     global_me.globalize();
     std::set<MonitorElement>::const_iterator me = data_.find(global_me);
     if (me != data_.end()) {
@@ -102,6 +114,63 @@ void DQMStore::mergeAndResetMEs(uint32_t run,
         dumpMe(*(gme.first), true);
       }
     }
+    // TODO(rovere): eventually reset the local object and mark it as reusable??
+    ++i;
+  }
+}
+
+void DQMStore::mergeAndResetMEsLumiSummaryCache(uint32_t run,
+						uint32_t lumi,
+						uint32_t streamId,
+						uint32_t moduleId) {
+  std::cout << "Merging objects from run: "
+            << run << " lumi: " << lumi
+	    << ", stream: " << streamId
+            << " module: " << moduleId << std::endl;
+  std::string null_str("");
+  MonitorElement proto(&null_str, &null_str, run, streamId, moduleId);
+  std::set<MonitorElement>::const_iterator e = data_.end();
+  std::set<MonitorElement>::const_iterator i = data_.lower_bound(proto);
+  while (i != e) {
+    if (i->run() != run
+        || i->streamId() != streamId
+        || i->moduleId() != moduleId)
+      break;
+    MonitorElement global_me(*i);
+
+    // Handle LS-based histograms in the LuminositySummaryCache() and
+    // ignore them here.
+
+    if (!global_me.getLumiFlag()) {
+      ++i;
+      continue;
+    }
+
+    global_me.globalize();
+    global_me.setLumi(lumi);
+    std::set<MonitorElement>::const_iterator me = data_.find(global_me);
+    if (me != data_.end()) {
+      std::cout << "Found global Object, using it --> ";
+      me->getTH1()->Add(i->getTH1());
+      dumpMe(*me, true);
+    } else {
+      // Since this is equivalent to a real booking operation it must
+      // be locked.
+      std::cout << "No global Object found. ";
+      std::lock_guard<std::mutex> guard(book_mutex_);
+      me = data_.find(global_me);
+      if (me != data_.end()) {
+        me->getTH1()->Add(i->getTH1());
+        dumpMe(*me, true);
+      } else {
+        std::pair<std::set<MonitorElement>::const_iterator, bool> gme;
+        gme = data_.insert(global_me);
+        assert(gme.second);
+        dumpMe(*(gme.first), true);
+      }
+    }
+    const_cast<MonitorElement*>(&*i)->reset();
+    dumpMe(*i, true);
     // TODO(rovere): eventually reset the local object and mark it as reusable??
     ++i;
   }

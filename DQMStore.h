@@ -54,7 +54,13 @@ class DQMStore {
   uint32_t run() const {return run_;}
   uint32_t streamId() const {return streamId_;}
   uint32_t moduleId() const {return moduleId_;}
-  void mergeAndResetMEs(uint32_t run, uint32_t streamId, uint32_t moduleId);
+  void mergeAndResetMEsRunSummaryCache(uint32_t run,
+				       uint32_t streamId,
+				       uint32_t moduleId);
+  void mergeAndResetMEsLumiSummaryCache(uint32_t run,
+					uint32_t lumi,
+					uint32_t streamId,
+					uint32_t moduleId);
 
  private:
   DQMStore(void) {

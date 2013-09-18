@@ -41,7 +41,7 @@ int main(int argc, char * argv[]) {
                                     &(*tmp),
                                     std::string(folder_name),
                                     10,  // d < NUM_MODULES/2 ? d : 10*d,
-                                    d, d));
+				    d, d));
   }
   store->bookTransition([&](DQMStore::IBooker & b) {
       b.cd(std::string("main"));
@@ -62,8 +62,24 @@ int main(int argc, char * argv[]) {
   join_and_dump(v_filling, store, true);
 
   for (int j = 1; j <= NUM_MODULES; ++j)
-    store->mergeAndResetMEs(10, j, j);
+    store->mergeAndResetMEsLumiSummaryCache(10, 1, j, j);
 
+  v_filling.clear();
+  for (int j = 0; j < NUM_MODULES; ++j) {
+    v_filling.push_back(std::thread(&Module::fillHistograms,
+                                    &(*modules.at(j)),
+                                    (j+1)*10.));
+  }
+
+  join_and_dump(v_filling, store, true);
+
+  for (int j = 1; j <= NUM_MODULES; ++j)
+    store->mergeAndResetMEsLumiSummaryCache(10, 2, j, j);
+
+  for (int j = 1; j <= NUM_MODULES; ++j)
+    store->mergeAndResetMEsRunSummaryCache(10, j, j);
+
+  store->dump(true);
   return 0;
 }
 
