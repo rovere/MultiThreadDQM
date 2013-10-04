@@ -38,10 +38,10 @@ class DQMStore {
   }
 
   template <typename iFunc>
-  void bookTransition(iFunc f,
-                      uint32_t run,
-                      uint32_t streamId,
-                      uint32_t moduleId) {
+  void bookTransaction(iFunc f,
+		       uint32_t run,
+		       uint32_t streamId,
+		       uint32_t moduleId) {
     std::lock_guard<std::mutex> guard(book_mutex_);
     run_ = run;
     streamId_ = streamId;

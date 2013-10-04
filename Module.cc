@@ -9,7 +9,7 @@ void Module::bookHistograms(std::string dir,
                             uint32_t streamId,
                             uint32_t moduleId) {
   DQMStore * store = DQMStore::getInstance();
-  store->bookTransition([&](DQMStore::IBooker & b) {
+  store->bookTransaction([&](DQMStore::IBooker & b) {
       b.cd(dir);
       mes_.push_back(b.book1d(std::string("pippo")));
       mes_.push_back(b.book1d(std::string("pluto")));

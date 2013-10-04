@@ -43,7 +43,7 @@ int main(int argc, char * argv[]) {
                                     10,  // d < NUM_MODULES/2 ? d : 10*d,
 				    d, d));
   }
-  store->bookTransition([&](DQMStore::IBooker & b) {
+  store->bookTransaction([&](DQMStore::IBooker & b) {
       b.cd(std::string("main"));
       me = b.book1d(std::string("foo_bar"));
     }, 1, 100, 100);
