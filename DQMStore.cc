@@ -49,7 +49,7 @@ const std::string * DQMStore::me_name(std::string name) {
 
 
 MonitorElement * DQMStore::book1d(std::string name) {
-  MonitorElement me(pwd(), me_name(name), run(), streamId(), moduleId());
+  MonitorElement me(pwd(), me_name(name), run_, streamId_, moduleId_);
   TH1F * tmp = new TH1F(name.c_str(), name.c_str(), 1000, 0., 1000.);
   me.initialize(tmp);
   return &(const_cast<MonitorElement &>(*(data_.insert(me).first)));
